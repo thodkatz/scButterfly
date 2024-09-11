@@ -207,7 +207,7 @@ def bm_batch_split_dataset(
 
 def unpaired_split_dataset_perturb(
     RNA_data, 
-    ATAC_data, 
+    RNA_data_stimulated, 
     seed = 19193
 ):
 
@@ -219,6 +219,14 @@ def unpaired_split_dataset_perturb(
     cell_type_list = list(RNA_data.obs.cell_type.cat.categories)
     
     id_list = [[[] for j in range(6)] for i in range(len(cell_type_list))]
+    # for the perturb use case, ATAC data is stimulated RNA
+    # id_list has 6 list and the ith list
+    # 5th index: 'RNA stimulated' indices for cell type cell_type_list[i] for test
+    # 4th index: 'RNA' indices for cell type cell_type_list[i] for test
+    # 3th index: 'RNA stimulated' indices for cell type cell_type_list[i] for validation, but they are based on the optimal transport (the ones matching bestly the rna)
+    # 2th index: 'RNA' indices for cell type cell_type_list[i] for validation
+    # 1th index: 'RNA stimulated' indices for cell type cell_type_list[i] for train, but they are based on the optimal transport (the ones matching bestly the rna)
+    # 0th index: 'RNA' indices for cell type cell_type_list[i] for train
     
     batch_list = list(RNA_data.obs.cell_type.cat.categories)
     
@@ -227,7 +235,7 @@ def unpaired_split_dataset_perturb(
     embedding_dict = {}
     for ctype in cell_type_list:
         sc_data_type_R = RNA_data[RNA_data.obs.cell_type == ctype].copy()
-        sc_data_type_A = ATAC_data[ATAC_data.obs.cell_type == ctype].copy()
+        sc_data_type_A = RNA_data_stimulated[RNA_data_stimulated.obs.cell_type == ctype].copy()
         sc_data_type = sc.AnnData.concatenate(sc_data_type_R, sc_data_type_A)
         sc.pp.pca(sc_data_type)
         z_ctrl = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'control']
@@ -256,7 +264,7 @@ def unpaired_split_dataset_perturb(
             id_list[i][4].extend(list(RNA_data.obs.cell_type[RNA_data.obs.cell_type == each].index.astype(int)))
             
         for each in test_batch_a:
-            id_list[i][5].extend(list(ATAC_data.obs.cell_type[ATAC_data.obs.cell_type == each].index.astype(int)))
+            id_list[i][5].extend(list(RNA_data_stimulated.obs.cell_type[RNA_data_stimulated.obs.cell_type == each].index.astype(int)))
         
         train_RNA_id = []
         train_ATAC_id = []
@@ -265,15 +273,15 @@ def unpaired_split_dataset_perturb(
         for each in train_batch_r:
             train_RNA_id.extend(list(RNA_data.obs[RNA_data.obs.cell_type == each].index))
         for each in train_batch_a:
-            train_ATAC_id.extend(list(ATAC_data.obs[ATAC_data.obs.cell_type == each].index))
+            train_ATAC_id.extend(list(RNA_data_stimulated.obs[RNA_data_stimulated.obs.cell_type == each].index))
         for each in validation_batch_r:
             validation_RNA_id.extend(list(RNA_data.obs[RNA_data.obs.cell_type == each].index))
         for each in validation_batch_a:
-            validation_ATAC_id.extend(list(ATAC_data.obs[ATAC_data.obs.cell_type == each].index))
+            validation_ATAC_id.extend(list(RNA_data_stimulated.obs[RNA_data_stimulated.obs.cell_type == each].index))
         train_RNA = RNA_data.obs.loc[train_RNA_id, :]
-        train_ATAC = ATAC_data.obs.loc[train_ATAC_id, :]
+        train_ATAC = RNA_data_stimulated.obs.loc[train_ATAC_id, :]
         validation_RNA = RNA_data.obs.loc[validation_RNA_id, :]
-        validation_ATAC = ATAC_data.obs.loc[validation_ATAC_id, :]
+        validation_ATAC = RNA_data_stimulated.obs.loc[validation_ATAC_id, :]
 
         for ctype in cell_type_list:
             
