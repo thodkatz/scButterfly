@@ -49,6 +49,7 @@ class NetBlock(nn.Module):
             self.activation_list.append(act_list[i])
             if not i == nlayer -1: 
                 self.dropout_list.append(nn.Dropout(dropout_rate))
+    
         
     
     def forward(self, x):
@@ -403,6 +404,8 @@ class Single_Translator(nn.Module):
             latent_layer = latent_layer_mu
         elif forward_type == 'train':
             latent_layer = self.reparameterize(latent_layer_mu, latent_layer_d)
+        else:
+            raise NotImplementedError
         
         latent_layer_out = self.decoder_act(self.decoder_bn(self.decoder_l(latent_layer)))
         return latent_layer_out, latent_layer_mu, latent_layer_d

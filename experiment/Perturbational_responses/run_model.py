@@ -10,7 +10,6 @@ from scButterfly.train_model_perturb import Model
 import torch
 import torch.nn as nn
 from scButterfly.split_datasets import unpaired_split_dataset_perturb
-from scButterfly.datasets_config import datasets, pbmc_perturb
 
 
 # opts, args = getopt.gnu_getopt(sys.argv[1:], 't:d:f:n', ['model_type=', 'data=', 'file_path=', 'number='])
@@ -19,8 +18,8 @@ from scButterfly.datasets_config import datasets, pbmc_perturb
 # file_path = opts[2][1]
 # number = opts[3][1]
 
-data = str(pbmc_perturb)
-file_path = str(datasets)
+data = "./data/pbmc/pbmc_perturb.h5ad"
+file_path = "./saved_results/butterfly/perturb"
 cell_type_indices = [1, 2, 3, 4, 5, 6, 7]
 cell_type_index = cell_type_indices[0]
 model_type = "basic"
@@ -74,7 +73,7 @@ model = Model(
     translator_input_dim_a = 128,
     translator_embed_act_list = [nn.LeakyReLU(), nn.LeakyReLU(), nn.LeakyReLU()],
     discriminator_nlayer = 1,
-    discriminator_dim_list_R = [128],
+    discriminator_dim_list_R = [128], # how this can be even work? the dim_list + 1 will be out of bounds, should be [128, 1] right? It is handled by the model
     discriminator_dim_list_A = [128],
     discriminator_act_list = [nn.Sigmoid()],
     dropout_rate = 0.1,
