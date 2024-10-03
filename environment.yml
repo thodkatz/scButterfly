@@ -1,0 +1,10 @@
+name: scbutterfly
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python 3.9.*
+  - pytorch
+  - pytorch-cuda # for gpu support
+  - pip
+  - setuptools

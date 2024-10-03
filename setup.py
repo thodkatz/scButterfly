@@ -19,21 +19,27 @@ setup(
     python_requires=">=3.9",
     install_requires=[
         'scanpy>=1.9.1',
-        'torch>=1.12.1',
-        'torchvision>=0.13.1',
-        'torchaudio>=0.12.1',
         'scikit-learn>=1.1.3',
         'scvi-tools',
         'scvi-colab',
         'scipy',
         'episcanpy==0.3.2',
-        'seaborn>=0.11.2',
-        'matplotlib>=3.6.2',
         'pot>=0.9.4',
-        'torchmetrics>=0.11.4',
         'leidenalg',
         'pybedtools',
         'adjusttext',
-        'jupyter'
-    ]
+    ],
+    extras_require={
+        "dev": [
+            "jupyter",
+            "matplotlib>=3.6.2",
+            "seaborn>=0.11.2",
+        ],
+        "torch": [
+            'torch>=1.12.1',
+            'torchvision>=0.13.1',
+            'torchaudio>=0.12.1',
+            'torchmetrics>=0.11.4',
+        ]
+    }
 )
