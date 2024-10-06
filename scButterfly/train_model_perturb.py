@@ -605,134 +605,134 @@ class Model():
             os.mkdir(output_path + '/model')
         
         """ pretrain for control and stimulate """
-        # my_logger.info('Control pretraining ...')
-        # pretrain_r_loss, pretrain_r_kl, pretrain_r_loss_val, pretrain_r_kl_val = [], [], [], []
-        # with tqdm(total = R2R_pretrain_epoch, ncols=100) as pbar:
-        #     pbar.set_description('Control pretrain')
-        #     for epoch in range(R2R_pretrain_epoch):
-        #         pretrain_r_loss_, pretrain_r_kl_, pretrain_r_loss_val_, pretrain_r_kl_val_ = [], [], [], []
-        #         self.set_train()
-        #         for idx, batch_samples in enumerate(self.train_dataloader): 
+        my_logger.info('Control pretraining ...')
+        pretrain_r_loss, pretrain_r_kl, pretrain_r_loss_val, pretrain_r_kl_val = [], [], [], []
+        with tqdm(total = R2R_pretrain_epoch, ncols=100) as pbar:
+            pbar.set_description('Control pretrain')
+            for epoch in range(R2R_pretrain_epoch):
+                pretrain_r_loss_, pretrain_r_kl_, pretrain_r_loss_val_, pretrain_r_kl_val_ = [], [], [], []
+                self.set_train()
+                for idx, batch_samples in enumerate(self.train_dataloader): 
 
-        #             if torch.cuda.is_available():
-        #                 batch_samples = batch_samples.cuda().to(torch.float32)
+                    if torch.cuda.is_available():
+                        batch_samples = batch_samples.cuda().to(torch.float32)
 
-        #             RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
+                    RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
 
-        #             """ pretrain for control """
-        #             weight_temp = loss_weight.copy()
-        #             #  loss_weight: list of loss weight for [r_loss, a_loss, d_loss, kl_div_R, kl_div_A, kl_div_all]
-        #             # loss_weights[3] -> kl_div_R
-        #             if epoch < R_pretrain_kl_warmup:
-        #                 weight_temp[3] = loss_weight[3] * epoch / R_pretrain_kl_warmup
+                    """ pretrain for control """
+                    weight_temp = loss_weight.copy()
+                    #  loss_weight: list of loss weight for [r_loss, a_loss, d_loss, kl_div_R, kl_div_A, kl_div_all]
+                    # loss_weights[3] -> kl_div_R
+                    if epoch < R_pretrain_kl_warmup:
+                        weight_temp[3] = loss_weight[3] * epoch / R_pretrain_kl_warmup
 
-        #             loss, reconstruct_loss, kl_div_r = self.forward_R2R(RNA_input, r_loss, weight_temp[3], 'train')
-        #             self.optimizer_R_encoder.zero_grad()
-        #             self.optimizer_R_decoder.zero_grad()
-        #             self.optimizer_R_translator.zero_grad()
-        #             loss.backward()
-        #             self.optimizer_R_encoder.step()
-        #             self.optimizer_R_decoder.step()
-        #             self.optimizer_R_translator.step()
+                    loss, reconstruct_loss, kl_div_r = self.forward_R2R(RNA_input, r_loss, weight_temp[3], 'train')
+                    self.optimizer_R_encoder.zero_grad()
+                    self.optimizer_R_decoder.zero_grad()
+                    self.optimizer_R_translator.zero_grad()
+                    loss.backward()
+                    self.optimizer_R_encoder.step()
+                    self.optimizer_R_decoder.step()
+                    self.optimizer_R_translator.step()
 
-        #             pretrain_r_loss_.append(reconstruct_loss.item())
-        #             pretrain_r_kl_.append(kl_div_r.item())
+                    pretrain_r_loss_.append(reconstruct_loss.item())
+                    pretrain_r_kl_.append(kl_div_r.item())
 
-        #         self.set_eval()
-        #         for idx, batch_samples in enumerate(self.validation_dataloader):
+                self.set_eval()
+                for idx, batch_samples in enumerate(self.validation_dataloader):
 
-        #             if torch.cuda.is_available():
-        #                 batch_samples = batch_samples.cuda().to(torch.float32)
+                    if torch.cuda.is_available():
+                        batch_samples = batch_samples.cuda().to(torch.float32)
 
-        #             RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
+                    RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
 
-        #             loss, reconstruct_loss, kl_div_r = self.forward_R2R(RNA_input, r_loss, weight_temp[3], 'test')
+                    loss, reconstruct_loss, kl_div_r = self.forward_R2R(RNA_input, r_loss, weight_temp[3], 'test')
 
-        #             pretrain_r_loss_val_.append(reconstruct_loss.item())
-        #             pretrain_r_kl_val_.append(kl_div_r.item())
+                    pretrain_r_loss_val_.append(reconstruct_loss.item())
+                    pretrain_r_kl_val_.append(kl_div_r.item())
 
-        #         pretrain_r_loss.append(np.mean(pretrain_r_loss_))
-        #         pretrain_r_kl.append(np.mean(pretrain_r_kl_))
-        #         pretrain_r_loss_val.append(np.mean(pretrain_r_loss_val_))
-        #         pretrain_r_kl_val.append(np.mean(pretrain_r_kl_val_))
+                pretrain_r_loss.append(np.mean(pretrain_r_loss_))
+                pretrain_r_kl.append(np.mean(pretrain_r_kl_))
+                pretrain_r_loss_val.append(np.mean(pretrain_r_loss_val_))
+                pretrain_r_kl_val.append(np.mean(pretrain_r_kl_val_))
 
-        #         self.early_stopping_R2R(np.mean(pretrain_r_loss_val_), self, output_path)
-        #         time.sleep(0.01)
-        #         pbar.update(1)
-        #         pbar.set_postfix(
-        #             train='{:.4f}'.format(np.mean(pretrain_r_loss_val_)), 
-        #             val='{:.4f}'.format(np.mean(pretrain_r_loss_)))
+                self.early_stopping_R2R(np.mean(pretrain_r_loss_val_), self, output_path)
+                time.sleep(0.01)
+                pbar.update(1)
+                pbar.set_postfix(
+                    train='{:.4f}'.format(np.mean(pretrain_r_loss_val_)), 
+                    val='{:.4f}'.format(np.mean(pretrain_r_loss_)))
                 
-        #         if self.early_stopping_R2R.early_stop:
-        #             my_logger.info('Control pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
-        #             self.RNA_encoder.load_state_dict(torch.load(output_path + '/model/RNA_encoder.pt'))
-        #             self.RNA_decoder.load_state_dict(torch.load(output_path + '/model/RNA_decoder.pt'))
-        #             self.R_translator.load_state_dict(torch.load(output_path + '/model/R_translator.pt'))
-        #             break
+                if self.early_stopping_R2R.early_stop:
+                    my_logger.info('Control pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
+                    self.RNA_encoder.load_state_dict(torch.load(output_path + '/model/RNA_encoder.pt'))
+                    self.RNA_decoder.load_state_dict(torch.load(output_path + '/model/RNA_decoder.pt'))
+                    self.R_translator.load_state_dict(torch.load(output_path + '/model/R_translator.pt'))
+                    break
         
         
-        # pretrain_a_loss, pretrain_a_kl, pretrain_a_loss_val, pretrain_a_kl_val = [], [], [], []
-        # my_logger.info('Stimulated pretraining ...')
-        # with tqdm(total = A2A_pretrain_epoch, ncols=100) as pbar:
-        #     pbar.set_description('Stimulated pretrain')
-        #     for epoch in range(A2A_pretrain_epoch):
-        #         pretrain_a_loss_, pretrain_a_kl_, pretrain_a_loss_val_, pretrain_a_kl_val_ = [], [], [], []
-        #         self.set_train()
-        #         for idx, batch_samples in enumerate(self.train_dataloader): 
+        pretrain_a_loss, pretrain_a_kl, pretrain_a_loss_val, pretrain_a_kl_val = [], [], [], []
+        my_logger.info('Stimulated pretraining ...')
+        with tqdm(total = A2A_pretrain_epoch, ncols=100) as pbar:
+            pbar.set_description('Stimulated pretrain')
+            for epoch in range(A2A_pretrain_epoch):
+                pretrain_a_loss_, pretrain_a_kl_, pretrain_a_loss_val_, pretrain_a_kl_val_ = [], [], [], []
+                self.set_train()
+                for idx, batch_samples in enumerate(self.train_dataloader): 
 
-        #             if torch.cuda.is_available():
-        #                 batch_samples = batch_samples.cuda().to(torch.float32)
+                    if torch.cuda.is_available():
+                        batch_samples = batch_samples.cuda().to(torch.float32)
 
-        #             RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
+                    RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
 
-        #             """ pretrain for stimulate """
-        #             weight_temp = loss_weight.copy()
-        #             if epoch < A_pretrain_kl_warmup:
-        #                 weight_temp[4] = loss_weight[4] * epoch / A_pretrain_kl_warmup
+                    """ pretrain for stimulate """
+                    weight_temp = loss_weight.copy()
+                    if epoch < A_pretrain_kl_warmup:
+                        weight_temp[4] = loss_weight[4] * epoch / A_pretrain_kl_warmup
 
-        #             loss, reconstruct_loss, kl_div_a = self.forward_A2A(ATAC_input, a_loss, weight_temp[4], 'train')
-        #             self.optimizer_A_encoder.zero_grad()
-        #             self.optimizer_A_decoder.zero_grad()
-        #             self.optimizer_A_translator.zero_grad()
-        #             loss.backward()
-        #             self.optimizer_A_encoder.step()
-        #             self.optimizer_A_decoder.step()
-        #             self.optimizer_A_translator.step()
+                    loss, reconstruct_loss, kl_div_a = self.forward_A2A(ATAC_input, a_loss, weight_temp[4], 'train')
+                    self.optimizer_A_encoder.zero_grad()
+                    self.optimizer_A_decoder.zero_grad()
+                    self.optimizer_A_translator.zero_grad()
+                    loss.backward()
+                    self.optimizer_A_encoder.step()
+                    self.optimizer_A_decoder.step()
+                    self.optimizer_A_translator.step()
 
-        #             pretrain_a_loss_.append(reconstruct_loss.item())
-        #             pretrain_a_kl_.append(kl_div_a.item())
+                    pretrain_a_loss_.append(reconstruct_loss.item())
+                    pretrain_a_kl_.append(kl_div_a.item())
 
-        #         self.set_eval()
-        #         for idx, batch_samples in enumerate(self.validation_dataloader):
+                self.set_eval()
+                for idx, batch_samples in enumerate(self.validation_dataloader):
 
-        #             if torch.cuda.is_available():
-        #                 batch_samples = batch_samples.cuda().to(torch.float32)
+                    if torch.cuda.is_available():
+                        batch_samples = batch_samples.cuda().to(torch.float32)
 
-        #             RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
+                    RNA_input, ATAC_input = torch.split(batch_samples, [RNA_input_dim, ATAC_input_dim], dim=1)
 
-        #             loss, reconstruct_loss, kl_div_a = self.forward_A2A(ATAC_input, a_loss, weight_temp[4], 'test')
+                    loss, reconstruct_loss, kl_div_a = self.forward_A2A(ATAC_input, a_loss, weight_temp[4], 'test')
 
-        #             pretrain_a_loss_val_.append(reconstruct_loss.item())
-        #             pretrain_a_kl_val_.append(kl_div_a.item())
+                    pretrain_a_loss_val_.append(reconstruct_loss.item())
+                    pretrain_a_kl_val_.append(kl_div_a.item())
 
-        #         pretrain_a_loss.append(np.mean(pretrain_a_loss_))
-        #         pretrain_a_kl.append(np.mean(pretrain_a_kl_))
-        #         pretrain_a_loss_val.append(np.mean(pretrain_a_loss_val_))
-        #         pretrain_a_kl_val.append(np.mean(pretrain_a_kl_val_))
+                pretrain_a_loss.append(np.mean(pretrain_a_loss_))
+                pretrain_a_kl.append(np.mean(pretrain_a_kl_))
+                pretrain_a_loss_val.append(np.mean(pretrain_a_loss_val_))
+                pretrain_a_kl_val.append(np.mean(pretrain_a_kl_val_))
 
-        #         self.early_stopping_A2A(np.mean(pretrain_a_loss_val_), self, output_path)
-        #         time.sleep(0.01)
-        #         pbar.update(1)
-        #         pbar.set_postfix(
-        #             train='{:.4f}'.format(np.mean(pretrain_a_loss_val_)), 
-        #             val='{:.4f}'.format(np.mean(pretrain_a_loss_)))
+                self.early_stopping_A2A(np.mean(pretrain_a_loss_val_), self, output_path)
+                time.sleep(0.01)
+                pbar.update(1)
+                pbar.set_postfix(
+                    train='{:.4f}'.format(np.mean(pretrain_a_loss_val_)), 
+                    val='{:.4f}'.format(np.mean(pretrain_a_loss_)))
                 
-        #         if self.early_stopping_A2A.early_stop:
-        #             my_logger.info('Stimulated pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
-        #             self.ATAC_encoder.load_state_dict(torch.load(output_path + '/model/ATAC_encoder.pt'))
-        #             self.ATAC_decoder.load_state_dict(torch.load(output_path + '/model/ATAC_decoder.pt'))
-        #             self.A_translator.load_state_dict(torch.load(output_path + '/model/A_translator.pt'))
-        #             break
+                if self.early_stopping_A2A.early_stop:
+                    my_logger.info('Stimulated pretraining early stop, validation loss does not improve in '+str(patience)+' epoches!')
+                    self.ATAC_encoder.load_state_dict(torch.load(output_path + '/model/ATAC_encoder.pt'))
+                    self.ATAC_decoder.load_state_dict(torch.load(output_path + '/model/ATAC_decoder.pt'))
+                    self.A_translator.load_state_dict(torch.load(output_path + '/model/A_translator.pt'))
+                    break
 
         
         """ train for translator and discriminator """
