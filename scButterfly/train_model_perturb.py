@@ -1,5 +1,6 @@
 import os
 import random
+from re import S
 import time
 import numpy as np
 import scanpy as sc
@@ -16,6 +17,8 @@ from scButterfly.calculate_cluster import *
 from scButterfly.draw_cluster import *
 from scButterfly.data_processing import *
 from scButterfly.logger import *
+from torch.utils.tensorboard import SummaryWriter
+
 
 
 class Model():
@@ -47,6 +50,7 @@ class Model():
         dropout_rate: float = 0.1,
         R_noise_rate: float = 0.5,
         A_noise_rate: float = 0.5,
+        name="scbutterfly"
     ):
         """
         Main model. Some parameters need information about data, please see in Tutorial.
@@ -135,7 +139,9 @@ class Model():
             rate of set part of stimulated input data to 0, default 0.5.
 
         """
+        self.name = name
         if not logging_path is None:
+            os.makedirs(logging_path, exist_ok=True)
             file_handle=open(logging_path + '/Parameters_Record.txt',mode='a')
             file_handle.writelines([
                 '------------------------------\n'
@@ -520,6 +526,10 @@ class Model():
             the path for output process logging, if not save, set it None, default None.
             
         """
+        writer_train = SummaryWriter(f'./runs/{self.name}/train')
+        writer_val = SummaryWriter(f'./runs/{self.name}/val')
+        
+        
         if not logging_path is None:
             file_handle=open(logging_path + '/Parameters_Record.txt',mode='a')
             file_handle.writelines([
@@ -568,6 +578,7 @@ class Model():
             self.translator.load_state_dict(torch.load(load_model + '/model/translator.pt'))
             self.discriminator_A.load_state_dict(torch.load(load_model + '/model/discriminator_A.pt'))
             self.discriminator_R.load_state_dict(torch.load(load_model + '/model/discriminator_R.pt'))
+            return
             
         if not seed is None:
             setup_seed(seed)
@@ -634,6 +645,8 @@ class Model():
                     self.optimizer_R_encoder.step()
                     self.optimizer_R_decoder.step()
                     self.optimizer_R_translator.step()
+                    
+
 
                     pretrain_r_loss_.append(reconstruct_loss.item())
                     pretrain_r_kl_.append(kl_div_r.item())
@@ -648,13 +661,26 @@ class Model():
 
                     loss, reconstruct_loss, kl_div_r = self.forward_R2R(RNA_input, r_loss, weight_temp[3], 'test')
 
+
+                    
                     pretrain_r_loss_val_.append(reconstruct_loss.item())
                     pretrain_r_kl_val_.append(kl_div_r.item())
+                   
+                pretrain_r_loss_mean = np.mean(pretrain_r_loss_)
+                pretrain_r_kl_mean = np.mean(pretrain_r_kl_)
+                pretrain_r_loss_val_mean = np.mean(pretrain_r_loss_val_)
+                pretrain_r_kl_val_mean = np.mean(pretrain_r_kl_val_)    
+                
+                
+                writer_train.add_scalar('pretrain/control/loss/r_loss', pretrain_r_loss_mean, epoch)
+                writer_train.add_scalar('pretrain/control/loss/kl', pretrain_r_kl_mean, epoch)
+                writer_val.add_scalar('pretrain/control/loss/r_loss', pretrain_r_loss_val_mean, epoch)
+                writer_val.add_scalar('pretrain/control/loss/kl', pretrain_r_kl_val_mean, epoch)
 
-                pretrain_r_loss.append(np.mean(pretrain_r_loss_))
-                pretrain_r_kl.append(np.mean(pretrain_r_kl_))
-                pretrain_r_loss_val.append(np.mean(pretrain_r_loss_val_))
-                pretrain_r_kl_val.append(np.mean(pretrain_r_kl_val_))
+                pretrain_r_loss.append(pretrain_r_loss_mean)
+                pretrain_r_kl.append(pretrain_r_kl_mean)
+                pretrain_r_loss_val.append(pretrain_r_loss_val_mean)
+                pretrain_r_kl_val.append(pretrain_r_kl_val_mean)
 
                 self.early_stopping_R2R(np.mean(pretrain_r_loss_val_), self, output_path)
                 time.sleep(0.01)
@@ -714,11 +740,22 @@ class Model():
 
                     pretrain_a_loss_val_.append(reconstruct_loss.item())
                     pretrain_a_kl_val_.append(kl_div_a.item())
+                    
+                pretrain_r_loss_mean = np.mean(pretrain_r_loss_)
+                pretrain_r_kl_mean = np.mean(pretrain_r_kl_)
+                pretrain_r_loss_val_mean = np.mean(pretrain_r_loss_val_)
+                pretrain_r_kl_val_mean = np.mean(pretrain_r_kl_val_)    
+                
+                
+                writer_train.add_scalar('pretrain/stimulated/loss/r_loss', pretrain_r_loss_mean, epoch)
+                writer_train.add_scalar('pretrain/stimulated/loss/kl', pretrain_r_kl_mean, epoch)
+                writer_val.add_scalar('pretrain/stimulated/loss/r_loss', pretrain_r_loss_val_mean, epoch)
+                writer_val.add_scalar('pretrain/stimulated/loss/kl', pretrain_r_kl_val_mean, epoch)
 
-                pretrain_a_loss.append(np.mean(pretrain_a_loss_))
-                pretrain_a_kl.append(np.mean(pretrain_a_kl_))
-                pretrain_a_loss_val.append(np.mean(pretrain_a_loss_val_))
-                pretrain_a_kl_val.append(np.mean(pretrain_a_kl_val_))
+                pretrain_a_loss.append(pretrain_r_loss_mean)
+                pretrain_a_kl.append(pretrain_r_kl_mean)
+                pretrain_a_loss_val.append(pretrain_r_loss_val_mean)
+                pretrain_a_kl_val.append(pretrain_r_kl_val_mean)
 
                 self.early_stopping_A2A(np.mean(pretrain_a_loss_val_), self, output_path)
                 time.sleep(0.01)
@@ -742,6 +779,7 @@ class Model():
             pbar.set_description('Integrative training')
             for epoch in range(translator_epoch):
                 train_loss_, train_kl_, train_discriminator_, train_loss_val_, train_kl_val_, train_discriminator_val_ = [], [], [], [], [], []
+                train_generator_, train_generator_val_ = [], []
                 self.set_train()
                 for idx, batch_samples in enumerate(self.train_dataloader):
 
@@ -785,6 +823,7 @@ class Model():
                     train_loss_.append(reconstruct_loss.item())
                     train_kl_.append(kl_div.item()) 
                     train_discriminator_.append(loss_d.item())
+                    train_generator_.append(loss_g.item())
 
                 self.set_eval()
                 for idx, batch_samples in enumerate(self.validation_dataloader):
@@ -798,21 +837,39 @@ class Model():
                     loss_d = self.forward_discriminator(batch_samples, RNA_input_dim, ATAC_input_dim, d_loss, 'test')
 
                     """ test for generator """
-                    loss_d = self.forward_discriminator(batch_samples, RNA_input_dim, ATAC_input_dim, d_loss, 'test')
                     reconstruct_loss, kl_div, loss_g = self.forward_translator(batch_samples, RNA_input_dim, ATAC_input_dim, a_loss, r_loss, weight_temp, 'train', kl_mean)
                     loss_g -= loss_weight[2] * loss_d
 
                     train_loss_val_.append(reconstruct_loss.item())
                     train_kl_val_.append(kl_div.item()) 
                     train_discriminator_val_.append(loss_d.item())
+                    train_generator_val_.append(loss_g.item())
 
-                train_loss.append(np.mean(train_loss_))
-                train_kl.append(np.mean(train_kl_))
-                train_discriminator.append(np.mean(train_discriminator_))
-                train_loss_val.append(np.mean(train_loss_val_))
-                train_kl_val.append(np.mean(train_kl_val_))
-                train_discriminator_val.append(np.mean(train_discriminator_val_))
-                self.early_stopping_all(np.mean(train_loss_val_), self, output_path)
+                train_loss_mean = np.mean(train_loss_)
+                train_kl_mean = np.mean(train_kl_)
+                train_discriminator_mean = np.mean(train_discriminator_)
+                train_loss_val_mean = np.mean(train_loss_val_)
+                train_kl_val_mean = np.mean(train_kl_val_)
+                train_discriminator_val_mean = np.mean(train_discriminator_val_)
+                train_generator_mean = np.mean(train_generator_)
+                train_generator_val_mean = np.mean(train_generator_val_)
+                
+                writer_train.add_scalar('integrative/loss/r_loss', train_loss_mean, epoch)
+                writer_train.add_scalar('integrative/loss/kl', train_kl_mean, epoch)
+                writer_train.add_scalar('integrative/loss/discriminator', train_discriminator_mean, epoch)
+                writer_train.add_scalar('integrative/loss/generator', train_generator_mean, epoch)
+                writer_val.add_scalar('integrative/loss/r_loss', train_loss_val_mean, epoch)
+                writer_val.add_scalar('integrative/loss/kl', train_kl_val_mean, epoch)
+                writer_val.add_scalar('integrative/loss/discriminator', train_discriminator_val_mean, epoch)
+                writer_val.add_scalar('integrative/loss/generator', train_generator_val_mean, epoch)
+                
+                train_loss.append(train_loss_mean)
+                train_kl.append(train_kl_mean)
+                train_discriminator.append(train_discriminator_mean)
+                train_loss_val.append(train_loss_val_mean)
+                train_kl_val.append(train_kl_val_mean)
+                train_discriminator_val.append(train_discriminator_val_mean)
+                self.early_stopping_all(train_loss_val_mean, self, output_path)
                 
                 time.sleep(0.01)
                 pbar.update(1)
@@ -910,6 +967,8 @@ class Model():
         
         if output_path is None:
             output_path = '.'
+        else:
+            os.makedirs(output_path, exist_ok=True)
         
         """ load model from model_path if need """
         if load_model:
