@@ -1066,7 +1066,7 @@ class Model():
         
         """ test DEGs if needed """
         if test_DEGs:
-            sc.tl.rank_genes_groups(eval_adata, groupby="condition", reference="control", method="t-test")
+            sc.tl.rank_genes_groups(eval_adata, groupby="condition", reference="control", method="t-test", show=False)
             degs_sti = eval_adata.uns["rank_genes_groups"]["names"]["stimulated"]
             degs_pred = eval_adata.uns["rank_genes_groups"]["names"]["pred"]
 
@@ -1076,7 +1076,7 @@ class Model():
             common_degs = list(set(degs_sti[0:100])&set(degs_pred[0:100]))
             common_nums = len(common_degs)
 
-            sc.pl.rank_genes_groups(eval_adata, n_genes=30, sharey=False, save='.pdf')
+            sc.pl.rank_genes_groups(eval_adata, n_genes=30, sharey=False, show=False, save=True)
 
             index_matrix.append(common_nums)
             index_colums.append('DEGs')
@@ -1112,7 +1112,7 @@ class Model():
         """ draw dotplot if needed """
         if test_dotplot:
             marker_genes = degs_sti[:20]
-            sc.pl.dotplot(eval_adata, marker_genes, groupby='condition', save='.pdf')     
+            sc.pl.dotplot(eval_adata, marker_genes, groupby='condition', save='.pdf', show=False)     
 
             with PdfPages(output_path + '/evaluation.pdf') as pdf:
                 for i in range(len(fig_list)):
@@ -1133,5 +1133,6 @@ class Model():
             A2R_predict.write_h5ad(output_path + '/predict/A2R.h5ad')
             R2A_predict.write_h5ad(output_path + '/predict/R2A.h5ad')
             
-        if return_predict:
-            return A2R_predict, R2A_predict
+        # if return_predict:
+        #     return A2R_predict, R2A_predict
+        return index_matrix
