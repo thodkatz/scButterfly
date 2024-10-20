@@ -1057,6 +1057,8 @@ class Model():
             R2A_predict)
         
         target_type = R2A_predict.obs.cell_type[0]
+
+        
         
         """ test pca if needed """
         if test_pca:
@@ -1080,6 +1082,8 @@ class Model():
 
             index_matrix.append(common_nums)
             index_colums.append('DEGs')
+        
+
         
         """ test R2 if needed """
         if test_R2:
@@ -1113,7 +1117,7 @@ class Model():
         if test_dotplot:
             marker_genes = degs_sti[:20]
             sc.pl.dotplot(eval_adata, marker_genes, groupby='condition', save='.pdf', show=False)     
-
+            
             with PdfPages(output_path + '/evaluation.pdf') as pdf:
                 for i in range(len(fig_list)):
                     pdf.savefig(figure=fig_list[i], dpi=200, bbox_inches='tight')
@@ -1125,6 +1129,9 @@ class Model():
         index_matrix = pd.DataFrame([index_matrix])
         index_matrix.columns = index_colums
         index_matrix.index = index_name
+        
+        """ test mse and fraction of cells expressing the gene """
+        
         index_matrix.to_csv(output_path + '/cluster_index.csv')
         
         """ save predicted model if needed """
@@ -1135,4 +1142,4 @@ class Model():
             
         # if return_predict:
         #     return A2R_predict, R2A_predict
-        return index_matrix
+        return index_matrix, R2A_predict, degs_sti
