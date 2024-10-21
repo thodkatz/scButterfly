@@ -208,7 +208,8 @@ def bm_batch_split_dataset(
 def unpaired_split_dataset_perturb(
     RNA_data, 
     RNA_data_stimulated, 
-    seed = 19193
+    seed = 19193,
+    shuffle=False
 ):
 
     import ot
@@ -231,7 +232,8 @@ def unpaired_split_dataset_perturb(
     
     batch_list = list(RNA_data.obs.cell_type.cat.categories)
     
-    random.shuffle(batch_list)
+    if shuffle:
+        random.shuffle(batch_list)
     
     embedding_dict = {}
     for ctype in cell_type_list:
@@ -246,11 +248,11 @@ def unpaired_split_dataset_perturb(
                   torch.ones(z_stim.shape[0]) / z_stim.shape[0],
                   torch.tensor(M), numItermax=100000)
         best_match = G.numpy().argsort()[:, -1:]
-        print("optimal transport array", G.shape)
+        #print("optimal transport array", G.shape)
         best_match = [each[0] for each in best_match[:, ::-1].tolist()]
         embedding_dict[ctype] = best_match
-        print(f"{ctype}, control num {len(z_ctrl)} stimulate num {len(z_stim)}")
-        print()
+        #print(f"{ctype}, control num {len(z_ctrl)} stimulate num {len(z_stim)}")
+        #print()
     
     for i in range(len(cell_type_list)):
         id_list_dict[cell_type_list[i]] = {
@@ -264,9 +266,9 @@ def unpaired_split_dataset_perturb(
                 }
         
                 
-        print()
-        print("Start", cell_type_list[i])
-        print("Batch list", batch_list)
+        #print()
+        #print("Start", cell_type_list[i])
+        #print("Batch list", batch_list)
         
         test_batch_r = batch_list[:1]
         validation_batch_r = batch_list[1:]
@@ -277,14 +279,14 @@ def unpaired_split_dataset_perturb(
         batch_list.extend(test_batch_r)
         batch_list = batch_list[1:]
 
-        print("Test batch control", test_batch_r)
-        print("Validation batch control", validation_batch_r)
-        print("Train batch control", train_batch_r)
-        print("Test batch stimulated", test_batch_a)
-        print("Validation batch stimulated", validation_batch_a)
-        print("Train batch stimulated", train_batch_a)
-        print("End", cell_type_list[i])
-        print()
+        #print("Test batch control", test_batch_r)
+        #print("Validation batch control", validation_batch_r)
+        #print("Train batch control", train_batch_r)
+        #print("Test batch stimulated", test_batch_a)
+        #print("Validation batch stimulated", validation_batch_a)
+        #print("Train batch stimulated", train_batch_a)
+        #print("End", cell_type_list[i])
+        #print()
         
         for each in test_batch_r:
             id_list[i][4].extend(list(RNA_data.obs.cell_type[RNA_data.obs.cell_type == each].index.astype(int)))
@@ -315,7 +317,7 @@ def unpaired_split_dataset_perturb(
             
             train_r_id_temp = list(train_RNA[train_RNA.cell_type == ctype].index.astype(int))
             train_count = int(0.8 * len(train_r_id_temp))
-            print("train len", train_count, "valid len", len(train_r_id_temp) - train_count)
+            #print("train len", train_count, "valid len", len(train_r_id_temp) - train_count)
             if train_count == 0:
                 continue
             id_list[i][0].extend(train_r_id_temp[0:train_count])
@@ -329,10 +331,10 @@ def unpaired_split_dataset_perturb(
             validation_a_id_temp = np.array(validation_a_id_temp)
             id_list[i][3].extend(list(validation_a_id_temp[embedding_dict[ctype]])[train_count:])
             
-            print("id_list")
-            for each in id_list[i]:
-                print(len(each))
-            print()
+            # print("id_list")
+            # for each in id_list[i]:
+            #     print(len(each))
+            # print()
         id_list_dict[cell_type_list[i]]["control"]["train"] = id_list[i][0]
         id_list_dict[cell_type_list[i]]["control"]["validation"] = id_list[i][2]
         id_list_dict[cell_type_list[i]]["stimulated"]["train"] = id_list[i][1]
