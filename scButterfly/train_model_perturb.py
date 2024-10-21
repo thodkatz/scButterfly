@@ -1,6 +1,4 @@
 import os
-import random
-from re import S
 import time
 import numpy as np
 import scanpy as sc
@@ -18,6 +16,7 @@ from scButterfly.draw_cluster import *
 from scButterfly.data_processing import *
 from scButterfly.logger import *
 from torch.utils.tensorboard import SummaryWriter
+from typing import Optional
 
 
 
@@ -427,7 +426,7 @@ class Model():
         R_pretrain_kl_warmup: int = 50,
         A_pretrain_kl_warmup: int = 50,
         translation_kl_warmup: int = 50,
-        load_model: str = None,
+        load_model: Optional[str] = None,
         logging_path: str = None
     ):
         """
@@ -578,6 +577,7 @@ class Model():
             self.translator.load_state_dict(torch.load(load_model + '/model/translator.pt'))
             self.discriminator_A.load_state_dict(torch.load(load_model + '/model/discriminator_A.pt'))
             self.discriminator_R.load_state_dict(torch.load(load_model + '/model/discriminator_R.pt'))
+            self.is_train_finished = True
             return
             
         if not seed is None:
@@ -1129,9 +1129,7 @@ class Model():
         index_matrix = pd.DataFrame([index_matrix])
         index_matrix.columns = index_colums
         index_matrix.index = index_name
-        
-        """ test mse and fraction of cells expressing the gene """
-        
+                
         index_matrix.to_csv(output_path + '/cluster_index.csv')
         
         """ save predicted model if needed """
