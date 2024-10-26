@@ -916,13 +916,7 @@ class Model():
         test_id_a: list,
         model_path: str = None,
         load_model: bool = True,
-        output_path: str = None,
-        test_pca: bool = True,
-        test_DEGs: bool = True,
-        test_R2: bool = True,
-        test_dotplot: bool = True,
-        output_data: bool = False,
-        return_predict: bool = False
+        output_path: str = None
     ):
         """
         Test for model.
@@ -1045,99 +1039,5 @@ class Model():
 
         R2A_predict.obs['condition'] = 'pred'
         
-        sc.settings.figdir = output_path + '/'
-        fig_list = []
-        index_matrix = []
-        index_name = ['con2sti']
-        index_colums = []
-        
-        eval_adata = sc.AnnData.concatenate(
-            self.RNA_data_copy[test_id_r, :].copy(), 
-            self.ATAC_data_copy[test_id_a, :].copy(),
-            R2A_predict)
-        
-        target_type = R2A_predict.obs.cell_type[0]
+        return self.RNA_data_copy[test_id_r, :].copy(),self.ATAC_data_copy[test_id_a, :].copy(), R2A_predict
 
-        
-        
-        """ test pca if needed """
-        if test_pca:
-            sc.tl.pca(eval_adata)
-            fig = sc.pl.pca(eval_adata, color="condition", frameon=False, title="PCA of "+target_type+" by Condition", return_fig=True)
-            fig_list.append(fig)
-        
-        """ test DEGs if needed """
-        if test_DEGs:
-            sc.tl.rank_genes_groups(eval_adata, groupby="condition", reference="control", method="t-test", show=False)
-            degs_sti = eval_adata.uns["rank_genes_groups"]["names"]["stimulated"]
-            degs_pred = eval_adata.uns["rank_genes_groups"]["names"]["pred"]
-
-            result = eval_adata.uns['rank_genes_groups']
-            groups = result['names'].dtype.names
-
-            common_degs = list(set(degs_sti[0:100])&set(degs_pred[0:100]))
-            common_nums = len(common_degs)
-
-            sc.pl.rank_genes_groups(eval_adata, n_genes=30, sharey=False, show=False, save=True)
-
-            index_matrix.append(common_nums)
-            index_colums.append('DEGs')
-        
-
-        
-        """ test R2 if needed """
-        if test_R2:
-            r2mean, r2mean_top100, fig = draw_reg_plot(eval_adata=eval_adata,
-                  cell_type="target_type",
-                  reg_type='mean',
-                  axis_keys={"x": "pred", "y": "stimulated"},
-                  condition_key='condition',
-                  gene_draw=degs_sti[:10],
-                  top_gene_list=degs_sti[:100],
-                  save_path=None,
-                  title=None,
-                  show=False,
-                  fontsize=12
-                  )
-            fig_list.append(fig)
-            index_matrix.append(r2mean)
-            index_colums.append('r2mean')
-            index_matrix.append(r2mean_top100)
-            index_colums.append('r2mean_top100')
-            
-            df = get_pearson2(eval_adata, key_dic={'condition_key': 'condition',
-                'cell_type_key': 'cell_type',
-                'ctrl_key': 'control',
-                'stim_key': 'stimulated',
-                'pred_key': 'pred',
-                }, n_degs=100, sample_ratio=0.8, times=100)
-            df.to_csv(output_path + '/sampled_r2.csv')
-
-        """ draw dotplot if needed """
-        if test_dotplot:
-            marker_genes = degs_sti[:20]
-            sc.pl.dotplot(eval_adata, marker_genes, groupby='condition', save='.pdf', show=False)     
-            
-            with PdfPages(output_path + '/evaluation.pdf') as pdf:
-                for i in range(len(fig_list)):
-                    pdf.savefig(figure=fig_list[i], dpi=200, bbox_inches='tight')
-                    plt.close()
-        
-        index_colums.append('data_name')
-        index_matrix.append(target_type)
-        
-        index_matrix = pd.DataFrame([index_matrix])
-        index_matrix.columns = index_colums
-        index_matrix.index = index_name
-                
-        index_matrix.to_csv(output_path + '/cluster_index.csv')
-        
-        """ save predicted model if needed """
-        if output_data and not os.path.exists(output_path + '/predict'):
-            os.mkdir(output_path + '/predict')
-            A2R_predict.write_h5ad(output_path + '/predict/A2R.h5ad')
-            R2A_predict.write_h5ad(output_path + '/predict/R2A.h5ad')
-            
-        # if return_predict:
-        #     return A2R_predict, R2A_predict
-        return index_matrix, R2A_predict, degs_sti

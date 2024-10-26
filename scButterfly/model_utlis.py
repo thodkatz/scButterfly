@@ -11,6 +11,7 @@ import anndata as ad
 import pandas as pd
 import gc
 import scanpy as sc
+from scipy import stats
 
 
 class RNA_ATAC_dataset(Dataset):
@@ -369,7 +370,8 @@ def get_pearson2(eval_adata, key_dic, n_degs=100, sample_ratio=0.8, times=100):
         pred_degs_mean = pred.loc[:, degs].mean().values.reshape(1, -1)
 
         r2_degs_mean = (np.corrcoef(stim_degs_mean, pred_degs_mean)[0, 1]) ** 2
+    
 
-        data[i, :] = [r2_degs_mean]
+        data[i, 0] = r2_degs_mean
     df = pd.DataFrame(data, columns=['r2_degs_mean'])
     return df
