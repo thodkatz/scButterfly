@@ -80,7 +80,7 @@ model = Model(
     R_noise_rate = 0.5,
     A_noise_rate = 0.5,
     chrom_list = [],
-    logging_path = file_path,
+    model_config_log_path = file_path,
     RNA_data = RNA_data,
     ATAC_data = RNA_data_stimulated
 )
@@ -126,9 +126,9 @@ model.train(
 model.test(
     test_id_r = test_id_r,
     test_id_a = test_id_a, 
-    model_path = file_path,
+    load_path = file_path,
     load_model = True,
-    output_path = file_path,
+    load_path = file_path,
     test_pca = True,
     test_DEGs = True,
     test_R2 = True,

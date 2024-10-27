@@ -143,7 +143,7 @@ class EarlyStopping:
         self.val_loss_min = val_loss
 
         
-def tensor2adata(x, val=1e-4):
+def tensor2adata(x, var, obs, val=1e-4):
     """
     Transform the tensor list to an Anndata.
     
@@ -165,6 +165,8 @@ def tensor2adata(x, val=1e-4):
     x = torch.masked_fill(x, x < val, 0)
     x = sparse.csr_matrix(x)
     x = ad.AnnData(x)
+    x.obs = obs
+    x.var = var
     return x
 
 
