@@ -584,6 +584,9 @@ class Model:
         my_logger = create_logger(
             name="Trainer", ch=True, fh=False, levelname=logging.INFO, overwrite=False
         )
+        
+        my_logger.info("CUDA availability: " + str(torch.cuda.is_available()))
+        
         if not load_model is None:
             my_logger.info(
                 "load pretrained model from path: " + str(load_model) + "/model/"
