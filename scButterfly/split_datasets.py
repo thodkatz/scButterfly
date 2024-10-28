@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 import numpy as np
 import random
+import anndata as ad
 
 
 def setup_seed(seed):
@@ -239,7 +240,7 @@ def unpaired_split_dataset_perturb(
     for ctype in cell_type_list:
         sc_data_type_R = RNA_data[RNA_data.obs.cell_type == ctype].copy()
         sc_data_type_A = RNA_data_stimulated[RNA_data_stimulated.obs.cell_type == ctype].copy()
-        sc_data_type = sc.AnnData.concatenate(sc_data_type_R, sc_data_type_A)
+        sc_data_type = ad.concat([sc_data_type_R, sc_data_type_A])
         sc.pp.pca(sc_data_type)
         z_ctrl = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'control']
         z_stim = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'stimulated']

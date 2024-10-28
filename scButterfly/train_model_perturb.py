@@ -1,5 +1,6 @@
 import os
 import time
+from anndata import AnnData
 import numpy as np
 import scanpy as sc
 import pandas as pd
@@ -55,6 +56,7 @@ class Model:
         dropout_rate: float = 0.1,
         R_noise_rate: float = 0.5,
         A_noise_rate: float = 0.5,
+        num_workers: int = 4,
     ):
         """
         Main model. Some parameters need information about data, please see in Tutorial.
@@ -269,7 +271,7 @@ class Model:
         self.ATAC_data = ATAC_data.X.toarray()
         self.RNA_data_copy = RNA_data.copy()
         self.ATAC_data_copy = ATAC_data.copy()
-        self.num_workers = 4
+        self.num_workers = num_workers
         
         self.tensorboard_path = tensorboard_path
         os.makedirs(self.tensorboard_path, exist_ok=True)
@@ -1243,8 +1245,8 @@ class Model:
                     time.sleep(0.01)
                     pbar.update(1)
                     
-        rna_data_test = self.RNA_data_copy[test_id_r, :].copy()
-        atac_data_test = self.ATAC_data_copy[test_id_a, :].copy()
+        rna_data_test: AnnData = self.RNA_data_copy[test_id_r, :].copy()
+        atac_data_test: AnnData = self.ATAC_data_copy[test_id_a, :].copy()
 
         R2A_predict = tensor2adata(R2A_predict, rna_data_test.var.copy(), rna_data_test.obs.copy())
         A2R_predict = tensor2adata(A2R_predict, atac_data_test.var.copy(), atac_data_test.obs.copy())
