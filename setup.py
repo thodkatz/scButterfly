@@ -15,7 +15,7 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     keywords="single cell, cross-modality translation, dual-aligned variational autoencoder",
-    packages=find_packages(),
+    packages=find_packages(exclude=['docs', 'experiment']),
     python_requires=">=3.9",
     install_requires=[
         'scanpy>=1.9.1',
