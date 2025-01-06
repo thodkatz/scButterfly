@@ -3,7 +3,6 @@ import seaborn as sns
 import warnings
 import umap
 from sklearn.decomposition import PCA
-import episcanpy.api as epi
 warnings.filterwarnings("ignore")
 from simCAS.code.simCAS import *
 import scanpy as sc

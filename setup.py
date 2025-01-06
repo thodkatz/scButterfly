@@ -17,13 +17,14 @@ setup(
     keywords="single cell, cross-modality translation, dual-aligned variational autoencoder",
     packages=find_packages(exclude=['docs', 'experiment']),
     python_requires=">=3.9",
+    # todo: we should use conda to resolve dependencies
     install_requires=[
         'scanpy>=1.9.1',
         'scikit-learn>=1.1.3',
         'scvi-tools',
-        'scvi-colab',
+        #'scvi-colab', # not indexed by conda (not really needed as well for our study)
         'scipy',
-        'episcanpy==0.3.2',
+        'episcanpy==0.3.2', # requires py < 3.9 with conda install (available with pip)
         'pot>=0.9.4',
         'leidenalg',
         'pybedtools',
