@@ -205,6 +205,40 @@ def bm_batch_split_dataset(
     
     return id_list
 
+def get_ot(
+    RNA_data, 
+    RNA_data_stimulated, 
+):
+
+    import ot
+
+    cell_type_list = list(RNA_data.obs.cell_type.cat.categories)
+    
+    embedding_dict = {}
+    for ctype in cell_type_list:
+        sc_data_type_R = RNA_data[RNA_data.obs.cell_type == ctype].copy()
+        sc_data_type_A = RNA_data_stimulated[RNA_data_stimulated.obs.cell_type == ctype].copy()
+        sc_data_type = ad.concat([sc_data_type_R, sc_data_type_A])
+        sc.pp.pca(sc_data_type)
+        
+        z_ctrl = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'control']
+        z_stim = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'stimulated']
+        
+        assert list(sc_data_type[sc_data_type.obs.condition == 'control'].obs.index) == list(sc_data_type_R.obs.index)
+        assert list(sc_data_type[sc_data_type.obs.condition == 'stimulated'].obs.index) == list(sc_data_type_A.obs.index)
+        
+        M = ot.dist(z_ctrl, z_stim, metric='euclidean')
+        
+        a = torch.ones(z_ctrl.shape[0]) / z_ctrl.shape[0]
+        b = torch.ones(z_stim.shape[0]) / z_stim.shape[0]
+        
+        G = ot.emd(a,b,torch.tensor(M), numItermax=100000)
+        best_match = G.numpy().argsort()[:, -1:]
+        #print("optimal transport array", G.shape)
+        best_match = [each[0] for each in best_match[:, ::-1].tolist()]
+        embedding_dict[ctype] = best_match
+    return embedding_dict
+
 
 def unpaired_split_dataset_perturb(
     RNA_data, 
@@ -212,8 +246,6 @@ def unpaired_split_dataset_perturb(
     seed = 19193,
     shuffle=False
 ):
-
-    import ot
     
     if not seed is None:
         setup_seed(seed)
@@ -231,30 +263,13 @@ def unpaired_split_dataset_perturb(
     # 1th index: 'RNA stimulated' indices for cell type cell_type_list[i] for train, but they are based on the optimal transport (the ones matching bestly the rna)
     # 0th index: 'RNA' indices for cell type cell_type_list[i] for train
     
+    embedding_dict = get_ot(RNA_data, RNA_data_stimulated)
+
     batch_list = list(RNA_data.obs.cell_type.cat.categories)
     
     if shuffle:
         random.shuffle(batch_list)
-    
-    embedding_dict = {}
-    for ctype in cell_type_list:
-        sc_data_type_R = RNA_data[RNA_data.obs.cell_type == ctype].copy()
-        sc_data_type_A = RNA_data_stimulated[RNA_data_stimulated.obs.cell_type == ctype].copy()
-        sc_data_type = ad.concat([sc_data_type_R, sc_data_type_A])
-        sc.pp.pca(sc_data_type)
-        z_ctrl = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'control']
-        z_stim = sc_data_type.obsm['X_pca'][sc_data_type.obs.condition == 'stimulated']
-        M = ot.dist(z_ctrl, z_stim, metric='euclidean')
-        G = ot.emd(torch.ones(z_ctrl.shape[0]) / z_ctrl.shape[0],
-                  torch.ones(z_stim.shape[0]) / z_stim.shape[0],
-                  torch.tensor(M), numItermax=100000)
-        best_match = G.numpy().argsort()[:, -1:]
-        #print("optimal transport array", G.shape)
-        best_match = [each[0] for each in best_match[:, ::-1].tolist()]
-        embedding_dict[ctype] = best_match
-        #print(f"{ctype}, control num {len(z_ctrl)} stimulate num {len(z_stim)}")
-        #print()
-    
+        
     for i in range(len(cell_type_list)):
         id_list_dict[cell_type_list[i]] = {
             "control": 
