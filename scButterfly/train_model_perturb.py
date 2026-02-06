@@ -423,12 +423,20 @@ class Model:
         predict_atac = self.discriminator_A(input_data_a)
         predict_rna = self.discriminator_R(input_data_r)
 
-        loss1 = d_loss(
-            predict_atac.reshape(batch_size), torch.tensor(temp).cuda().float()
-        )
-        loss2 = d_loss(
-            predict_rna.reshape(batch_size), torch.tensor(temp).cuda().float()
-        )
+        if torch.cuda.is_available():
+            loss1 = d_loss(
+                predict_atac.reshape(batch_size), torch.tensor(temp).cuda().float()
+            )
+            loss2 = d_loss(
+                predict_rna.reshape(batch_size), torch.tensor(temp).cuda().float()
+            )
+        else:
+            loss1 = d_loss(
+                predict_atac.reshape(batch_size), torch.tensor(temp).float()
+            )
+            loss2 = d_loss(
+                predict_rna.reshape(batch_size), torch.tensor(temp).float()
+            )
         return loss1 + loss2
 
     def save_model_dict(self, output_path):
