@@ -395,7 +395,7 @@ class Single_Translator(nn.Module):
         eps = torch.randn_like(sigma)
         return mu + eps * sigma
     
-    def forward(self, x, forward_type):
+    def forward(self, x, forward_type = "train"):
             
         latent_layer_mu = self.encoder_act_mu(self.encoder_bn_mu(self.encoder_l_mu(x)))
         latent_layer_d = self.encoder_act_d(self.encoder_bn_d(self.encoder_l_d(x)))

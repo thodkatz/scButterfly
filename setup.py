@@ -21,14 +21,14 @@ setup(
     install_requires=[
         'scanpy>=1.9.1',
         'scikit-learn>=1.1.3',
-        'scvi-tools',
+        #'scvi-tools',
         #'scvi-colab', # not indexed by conda (not really needed as well for our study)
-        'scipy',
+        #'scipy',
         'episcanpy==0.3.2', # requires py < 3.9 with conda install (available with pip)
         'pot>=0.9.4',
-        'leidenalg',
-        'pybedtools',
-        'adjusttext',
+        #'leidenalg',
+        #'pybedtools',
+        #'adjusttext',
     ],
     extras_require={
         "dev": [

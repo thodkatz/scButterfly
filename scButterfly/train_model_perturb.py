@@ -274,7 +274,8 @@ class Model:
         self.num_workers = num_workers
         
         self.tensorboard_path = tensorboard_path
-        os.makedirs(self.tensorboard_path, exist_ok=True)
+        if self.tensorboard_path is not None:
+            os.makedirs(self.tensorboard_path, exist_ok=True)
 
     def set_train(self):
         self.RNA_encoder.train()
