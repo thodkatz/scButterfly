@@ -597,31 +597,37 @@ class Model:
         )
         
         my_logger.info("CUDA availability: " + str(torch.cuda.is_available()))
+
+        def torch_load(path: str):
+            if torch.cuda.is_available():
+                return torch.load(path)
+            else:
+                return torch.load(path, map_location=torch.device("cpu"))
         
         if not load_model is None:
             my_logger.info(
                 "load pretrained model from path: " + str(load_model) + "/model/"
             )
             self.RNA_encoder.load_state_dict(
-                torch.load(load_model + "/model/RNA_encoder.pt")
+                torch_load(load_model + "/model/RNA_encoder.pt")
             )
             self.ATAC_encoder.load_state_dict(
-                torch.load(load_model + "/model/ATAC_encoder.pt")
+                torch_load(load_model + "/model/ATAC_encoder.pt")
             )
             self.RNA_decoder.load_state_dict(
-                torch.load(load_model + "/model/RNA_decoder.pt")
+                torch_load(load_model + "/model/RNA_decoder.pt")
             )
             self.ATAC_decoder.load_state_dict(
-                torch.load(load_model + "/model/ATAC_decoder.pt")
+                torch_load(load_model + "/model/ATAC_decoder.pt")
             )
             self.translator.load_state_dict(
-                torch.load(load_model + "/model/translator.pt")
+                torch_load(load_model + "/model/translator.pt")
             )
             self.discriminator_A.load_state_dict(
-                torch.load(load_model + "/model/discriminator_A.pt")
+                torch_load(load_model + "/model/discriminator_A.pt")
             )
             self.discriminator_R.load_state_dict(
-                torch.load(load_model + "/model/discriminator_R.pt")
+                torch_load(load_model + "/model/discriminator_R.pt")
             )
             self.is_train_finished = True
             return
